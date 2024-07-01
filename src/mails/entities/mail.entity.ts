@@ -1,7 +1,7 @@
 import { IsString } from 'class-validator';
 import { Column, Entity } from 'typeorm';
 
-@Entity()
+@Entity('mail')
 export class Mail {
   @Column({ primary: true, generated: true })
   id: number;

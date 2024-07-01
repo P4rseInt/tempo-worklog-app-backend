@@ -8,15 +8,25 @@ import { Mail } from './entities/mail.entity';
 import { Repository } from 'typeorm';
 import { WorLogsResponseDTO } from './response-dto/worklogs-response-dto';
 import { WorkLogsDTO } from './dto/worklogs.dto';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Logger } from '@nestjs/common';
 
 
 @Injectable()
 export class MailsService {
+  private readonly logger = new Logger(MailerService.name);
+
   constructor(private mailerService: MailerService,
     @InjectRepository(Mail)
     private readonly mailRepository: Repository<Mail>,
   ) {
   }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async deleteTableData() {
+    await this.mailRepository.clear()
+  }
+
 
   async sendAttachmentAndEmail(mailDto: CreateMailDto) {
     try {
@@ -26,8 +36,10 @@ export class MailsService {
       const currentHour = new Date().getHours();
       let greeting: string;
 
-      if (currentHour >= 18) {
+      if (currentHour >= 18 || currentHour < 5) {
         greeting = 'Buenas noches';
+      } else if (currentHour >= 5 && currentHour < 12) {
+        greeting = 'Buenos días';
       } else {
         greeting = 'Buenas tardes';
       }
@@ -36,7 +48,7 @@ export class MailsService {
         from: 'sebastian.leal@sermaluc.cl',
         to: mailDto.destinatario,
         subject: `Tareas Semana Del: ${from} Al: ${to}`,
-        text: `${greeting} Alejandra junto con saludar, adjunto tareas Semana Del: ${from} Al: ${to}. Saludos cordiales`,
+        text: `${greeting} Alejandra junto con saludar, adjunto tareas semana mencionada. Saludos cordiales.`,
         attachments: [
           {
             filename,
@@ -125,7 +137,7 @@ export class MailsService {
     });
 
     return await this.mailRepository.save(allElements);
-  //   return allElements; // WORKLOGS QUE RETORNA AXIOS
+    //   return allElements; // WORKLOGS QUE RETORNA AXIOS
   }
 
 
